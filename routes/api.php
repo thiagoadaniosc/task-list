@@ -17,8 +17,9 @@ use Illuminate\Http\Request;
 //     return $request->user();
 // });
 
-Route::group(['prefix' => '/task-list'], function (){
-    Route::get('/all', function () {
-        return response()->json($data, 200);
-    });
+Route::group(['prefix' => '/tasks-lists'], function (){
+    Route::get('/', 'TaskListController@index');
+    Route::get('/{id}', 'TaskListController@show');
+    Route::post('/', 'TaskListController@store');
+    Route::delete('/{id}', 'TaskListController@delete');
 });
