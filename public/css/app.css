@@ -3,10 +3,22 @@
     font-size: 5px;
 }
 
+.tasks-lists-item {
+	cursor: pointer;
+}
+
+.active{
+	color: white !important;
+}
+
 .tasks-lists-delete i {
     font-size: 20px;
 }
 
 .tasks-lists-item:hover .tasks-lists-delete {
     display: inline-block;
+}
+
+.task{
+	cursor: pointer;
 }

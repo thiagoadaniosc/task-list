@@ -12,3 +12,4 @@
 */
 
 Route::get('/', 'AppController@index');
+Route::get('/{id}', 'AppController@show');

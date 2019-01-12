@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
 Route::group(['prefix' => '/tasks-lists'], function (){
     Route::get('/', 'TaskListController@index');
     Route::get('/{id}', 'TaskListController@show');
+    Route::get('{id}/tasks/', 'TaskController@index');
     Route::post('/', 'TaskListController@store');
     Route::delete('/{id}', 'TaskListController@delete');
 });
