@@ -22,6 +22,14 @@ function getTasksLists() {
 }
 
 function createTaskList(){
+     if (tasksListsInput.val().length == 0) {
+        Swal({
+          type: 'error',
+          title: 'Oops...',
+          text: 'Insira um nome para sua lista',
+        })
+        return false;
+    }
     let requestData = {
         name : tasksListsInput.val()
     };
@@ -150,6 +158,14 @@ function getTask(id){
 }
 
 function storeTask() {
+    if (taskTitleInput.val().length == 0 || taskDescriptionInput.val().length == 0) {
+        Swal({
+          type: 'error',
+          title: 'Oops...',
+          text: 'Preencha todos os campos corretamente!',
+        })
+        return false;
+    }
     let requestData = {
         title       : taskTitleInput.val(),
         description : taskDescriptionInput.val(),
