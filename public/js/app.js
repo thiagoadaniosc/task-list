@@ -4,19 +4,19 @@ const taskListTitle = document.getElementById('task-list-title');
 const tasksLists  = $('#tasks-lists')
 const tasksListsInput  = $('#tasks-lists-input')
 const tasksTable  = $('#tasks-table')
+const taskTitleInput = $('#task-title-input');
+const taskDescriptionInput = $('#task-description-input');
 
 function getTasksLists() {
     $.get('/api/tasks-lists', data => {
-        index = 0;
         for (item of data.task_lists) { 
             tasksLists.append(`
-                <a data-taskListId="${item.id}" class="list-group-item list-group-item-action tasks-lists-item ${ index == 0 ? 'active' : ''}" onclick="getTask(${item.id})">
+                <a data-taskListId="${item.id}" class="list-group-item list-group-item-action tasks-lists-item ${ currentTaskListId == item.id ? 'active' : ''}" onclick="getTask(${item.id})">
                 <i class="material-icons">list</i> 
-                ${item.name}
+                <span class="task-list-sidebar-title">${item.name}</span>
                 <button class="tasks-lists-delete btn p-0 m-0 ml-2 text-right" onclick="removeTaskList(${item.id})"><i class="material-icons p-0 m-0 ">delete</i></button>
                 <a>
                 `);
-            index++;
         }
     });
 }
@@ -30,12 +30,35 @@ function createTaskList(){
         tasksLists.append(`
             <a data-taskListId="${item.id}"  class="list-group-item list-group-item-action tasks-lists-item" onclick="getTask(${item.id})">
             <i class="material-icons">list</i> 
-            ${item.name}
+            <span class="task-list-sidebar-title">${item.name}</span>
             <button class="tasks-lists-delete btn p-0 m-0 ml-2 text-right" onclick="removeTaskList(${item.id})"><i class="material-icons p-0 m-0 ">delete</i></button>
             <a>
             `);
         tasksListsInput.val('');
     });
+}
+
+function editTaskList() {
+    (async () => { 
+        const {value: text} = await Swal({
+            input               : 'text',
+            inputPlaceholder    : 'Titulo',
+            inputValue          : taskListTitle.innerHTML,
+            showCancelButton    : true
+        })
+
+        if (text && text != taskListTitle.innerHTML) {
+         $.ajax({
+            type    : "PUT",
+            url     : `/api/tasks-lists/${currentTaskListId}`,
+            data    : {name: text},
+            success: function (data) {
+                taskListTitle.innerHTML = text;
+                $(`[data-taskListId='${currentTaskListId}']`).find('.task-list-sidebar-title').html(text);
+            }
+        });
+     }
+ })()
 }
 
 function removeTaskList(id) {
@@ -67,43 +90,133 @@ function removeTaskList(id) {
 })
 }
 
+function tasksListsSortable () {
+     $('.sortable').sortable({
+        update : function (){
+           let tasksLists = [];
+           for (taskList of $('.sortable .tasks-lists-item').toArray() ) {
+                tasksLists.push(taskList.getAttribute('data-taskListId'));
+           }
+           $.ajax({
+            type: "PUT",
+            url: `/api/tasks-lists/update-positions`,
+            data: {tasksLists : tasksLists}
+        });
+        }
+    });
+}
+
+function tasksSortable(){
+    $('.sortable-table').sortable({
+        update : function (){
+           let tasks = [];
+           for (task of $('.sortable-table .task').toArray() ) {
+                tasks.push(task.getAttribute('data-taskId'));
+           }
+           $.ajax({
+            type: "PUT",
+            url: `/api/tasks-lists/tasks/update-positions`,
+            data: {tasks : tasks}
+        });
+        }
+    });
+}
+
 function getTask(id){
-    this.currentTaskListId = id;
+    currentTaskListId = id;
+    window.history.pushState("", "Lista de Tarefas", `/${id}`);
     $('.tasks-lists-item').removeClass('active');
     $(`[data-taskListId=${id}]`).addClass('active');
     $('.task').remove();
+    $('#main-task').removeClass('d-none');
     $.get(`/api/tasks-lists/${id}`, data => {
+        if(!data.task_lists){
+            $('#main-task').addClass('d-none');
+            return false;
+        }
         taskListTitle.innerHTML  = data.task_lists.name;
     });  
 
     $.get(`/api/tasks-lists/${id}/tasks`, data => {
         for (item of data.tasks) {
-            tasksTable.append(`
-                <tr class="task">
-                    <td>
-                        <span class="bmd-form-group">
-                            <div class="checkbox">
-                                <label>
-                                    <input type="checkbox" value="" checked="">
-                                    <span class="checkbox-decorator"><span class="check"></span></span>
-                                </label>
-                            </div>
-                        </span>
-                    </td>
-
-                    <td class="align-middle">${item.title}</td>
-                    <td class="align-middle">${item.description}</td>
-                    <td class="text-center">
-                        <button class="btn btn-primary">Editar</button>
-                    </td>
-                </tr>
-                `);
+            insertTaskOnTable(item);
         }
     });   
 }
 
-$(document).ready(function () {
+function storeTask() {
+    let requestData = {
+        title       : taskTitleInput.val(),
+        description : taskDescriptionInput.val(),
+    };
+    $.post(`/api/tasks-lists/${currentTaskListId}/tasks`, requestData, data => {
+        insertTaskOnTable(data.task);
+        taskDescriptionInput.val('');
+        taskTitleInput.val('');
+    });
+}
+
+function changeTaskStatus(id) {
+    $.ajax({
+        type: "PUT",
+        url: `/api/tasks-lists/tasks/${id}/status`,
+        success: function (data) {
+            let task = $(`[data-taskId='${id}']`);
+            if (data.task.status == 'concluido') {
+                task.addClass('bg-light');
+            } else {
+                task.removeClass('bg-light');
+            }
+        }
+    });
+}
+
+function removeTask(id) {
+    $.ajax({
+            type: "DELETE",
+            url: `/api/tasks-lists/tasks/${id}`,
+            success: function (data) {
+                $(`[data-taskId=${id}]`).remove();
+            }
+        });   
+}
+
+function insertTaskOnTable(item){
+ tasksTable.append(`
+    <tr class="task ${item.status == 'concluido' ? 'bg-light' : ''}" data-taskId="${item.id}">
+    <td>
+    <span class="bmd-form-group">
+    <div class="checkbox">
+    <label>
+    <input type="checkbox" class="task-checkbox" ${item.status == 'concluido' ? 'checked=""' : ''} onclick="changeTaskStatus(${item.id})">
+    <span class="checkbox-decorator"><span class="check"></span></span>
+    </label>
+    </div>
+    </span>
+    </td>
+
+    <td class="align-middle">${item.title}</td>
+    <td class="align-middle">${item.description}</td>
+    <td class="text-center">
+    <button class="btn btn-primary pb-0 m-0"><i class="material-icons">edit</i></button>
+    <button class="btn btn-primary pb-0 m-0" onclick="removeTask(${item.id})"><i class="material-icons">delete</i></button>
+    </td>
+    </tr>
+    `);
+}
+
+function init(){
     getTasksLists();
-    $('.sortable').sortable();
-    $('.sortable-table').sortable();
+    currentTaskListId = window.location.pathname.substring(1, window.location.pathname.length);
+    tasksListsSortable();
+    tasksSortable();
+    if (window.location.pathname == '/') {
+        $('#main-task').addClass('d-none');
+    } else {
+        getTask(window.location.pathname.substring(1, window.location.pathname.length));
+    }
+}
+
+$(document).ready(function () {
+    init();
 });
