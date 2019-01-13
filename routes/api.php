@@ -25,9 +25,10 @@ Route::group(['prefix' => '/tasks-lists'], function (){
     Route::post('/', 'TaskListController@store');
     Route::delete('/{id}', 'TaskListController@delete');
     
+    Route::put('/tasks/update-positions', 'TaskController@updatePositions');
     Route::get('{id}/tasks/', 'TaskController@index');
     Route::post('{id}/tasks/', 'TaskController@store');
     Route::put('/tasks/{id}/status', 'TaskController@changeStatus');
+    Route::put('/tasks/{id}', 'TaskController@update');
     Route::delete('/tasks/{id}', 'TaskController@delete');
-    Route::put('/tasks/update-positions', 'TaskController@updatePositions');
 });

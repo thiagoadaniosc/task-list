@@ -21,7 +21,7 @@
         </nav>
         
         <main class="row m-0">
-            <div class="col-xl-3 bg-light p-0 border-right" id="sidebar" style="height: calc(100vh - 60px);  overflow-x:auto">
+            <div class="col-xl-3 bg-light p-0 border-right" id="sidebar">
                 <h5 class="text-center mt-3">Listas de Tarefas</h5>
                 <hr>
                 <div class="list-group sortable" id="tasks-lists">
@@ -33,11 +33,12 @@
                 </div>
             </div>
             
-            <div class="col-9 p-4" id="main-task">
-
+            <div class="col-lg-9 p-4 col-md-12" id="main-task">
+                <button class="btn btn-primary d-xl-none" onclick="goBack()"><i class="material-icons text-primary p-1 m-0">arrow_back</i></button>
                 <h5 class="text-primary d-inline" id="task-list-title"></h5>
                 <button class="btn btn-primary p-0" onclick="editTaskList()"><i class="material-icons text-primary p-1 m-0" style="font-size: 15px">edit</i></button>
                 
+                <div class="table-responsive">
                 <table class="table table-hover">
                 {{--     <thead>
                         <tr>
@@ -65,6 +66,7 @@
 
                     </tbody>
                 </table>
+                </div>
             </div>
         </main>
     </div>
@@ -77,5 +79,6 @@
     <script src="{{asset('/js/bootstrap-material-design.js')}}"></script>
     <script src="{{asset('/js/bootstrap.bundle.min.js')}}"></script>
     <script src="{{asset('/js/app.js')}}"></script>
+    <script src="{{asset('/js/sidebar.js')}}"></script>
 </body>
 </html>

@@ -48,7 +48,7 @@ function editTaskList() {
         })
 
         if (text && text != taskListTitle.innerHTML) {
-         $.ajax({
+           $.ajax({
             type    : "PUT",
             url     : `/api/tasks-lists/${currentTaskListId}`,
             data    : {name: text},
@@ -57,11 +57,13 @@ function editTaskList() {
                 $(`[data-taskListId='${currentTaskListId}']`).find('.task-list-sidebar-title').html(text);
             }
         });
-     }
- })()
+       }
+   })()
 }
 
 function removeTaskList(id) {
+    let e = window.event;
+    e.stopPropagation();
     Swal({
       title: 'Você tem certeza ?',
       text: "Você não poderá reverter isso!",
@@ -91,38 +93,41 @@ function removeTaskList(id) {
 }
 
 function tasksListsSortable () {
-     $('.sortable').sortable({
-        update : function (){
-           let tasksLists = [];
-           for (taskList of $('.sortable .tasks-lists-item').toArray() ) {
-                tasksLists.push(taskList.getAttribute('data-taskListId'));
-           }
-           $.ajax({
-            type: "PUT",
-            url: `/api/tasks-lists/update-positions`,
-            data: {tasksLists : tasksLists}
-        });
-        }
+   $('.sortable').sortable({
+    update : function (){
+     let tasksLists = [];
+     for (taskList of $('.sortable .tasks-lists-item').toArray() ) {
+        tasksLists.push(taskList.getAttribute('data-taskListId'));
+    }
+    $.ajax({
+        type: "PUT",
+        url: `/api/tasks-lists/update-positions`,
+        data: {tasksLists : tasksLists}
     });
+}
+});
 }
 
 function tasksSortable(){
     $('.sortable-table').sortable({
         update : function (){
-           let tasks = [];
-           for (task of $('.sortable-table .task').toArray() ) {
-                tasks.push(task.getAttribute('data-taskId'));
-           }
-           $.ajax({
+         let tasks = [];
+         for (task of $('.sortable-table .task').toArray() ) {
+            tasks.push(task.getAttribute('data-taskId'));
+        }
+        $.ajax({
             type: "PUT",
             url: `/api/tasks-lists/tasks/update-positions`,
             data: {tasks : tasks}
         });
-        }
-    });
+    }
+});
 }
 
 function getTask(id){
+    if($(window).width() < 1200) {
+        $('#sidebar').addClass('d-none');
+    }
     currentTaskListId = id;
     window.history.pushState("", "Lista de Tarefas", `/${id}`);
     $('.tasks-lists-item').removeClass('active');
@@ -156,6 +161,41 @@ function storeTask() {
     });
 }
 
+function editTask(id) {
+    (async () => { 
+        let taskTitle = $(`[data-taskId="${id}"] .task-title`);
+        let taskDescription = $(`[data-taskId="${id}"] .task-description`);
+        const {value: formValues} = await Swal({
+          title: 'Editar Tarefa',
+          html:
+          `<input id="swal-input1" value="${taskTitle.html()}" placeholder="Titulo" class="swal2-input">` +
+          `<input id="swal-input2" value="${taskDescription.html()}" placeholder="Descrição" class="swal2-input">`,
+          focusConfirm: false,
+          showCancelButton    : true,
+          preConfirm: () => {
+            return [
+            document.getElementById('swal-input1').value,
+            document.getElementById('swal-input2').value
+            ]
+        }})
+
+        if (formValues) {
+            let task = formValues;      
+            console.log(task);
+           $.ajax({
+            type    : "PUT",
+            url     : `/api/tasks-lists/tasks/${id}`,
+            data    : {title: task[0], description: task[1]},
+            success: function (data) {
+                taskTitle.html(data.task.title);
+                taskDescription.html(data.task.description);
+            }
+            });
+        }
+
+    })()
+}
+
 function changeTaskStatus(id) {
     $.ajax({
         type: "PUT",
@@ -173,16 +213,16 @@ function changeTaskStatus(id) {
 
 function removeTask(id) {
     $.ajax({
-            type: "DELETE",
-            url: `/api/tasks-lists/tasks/${id}`,
-            success: function (data) {
-                $(`[data-taskId=${id}]`).remove();
-            }
-        });   
+        type: "DELETE",
+        url: `/api/tasks-lists/tasks/${id}`,
+        success: function (data) {
+            $(`[data-taskId=${id}]`).remove();
+        }
+    });   
 }
 
 function insertTaskOnTable(item){
- tasksTable.append(`
+   tasksTable.append(`
     <tr class="task ${item.status == 'concluido' ? 'bg-light' : ''}" data-taskId="${item.id}">
     <td>
     <span class="bmd-form-group">
@@ -195,10 +235,10 @@ function insertTaskOnTable(item){
     </span>
     </td>
 
-    <td class="align-middle">${item.title}</td>
-    <td class="align-middle">${item.description}</td>
+    <td class="align-middle task-title">${item.title}</td>
+    <td class="align-middle task-description">${item.description}</td>
     <td class="text-center">
-    <button class="btn btn-primary pb-0 m-0"><i class="material-icons">edit</i></button>
+    <button class="btn btn-primary pb-0 m-0" onclick="editTask(${item.id})"><i class="material-icons">edit</i></button>
     <button class="btn btn-primary pb-0 m-0" onclick="removeTask(${item.id})"><i class="material-icons">delete</i></button>
     </td>
     </tr>
